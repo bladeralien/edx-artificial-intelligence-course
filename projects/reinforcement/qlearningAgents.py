@@ -4,7 +4,7 @@
 # educational purposes provided that (1) you do not distribute or publish
 # solutions, (2) you retain this notice, and (3) you provide clear
 # attribution to UC Berkeley, including a link to http://ai.berkeley.edu.
-# 
+#
 # Attribution Information: The Pacman AI projects were developed at UC Berkeley.
 # The core projects and autograders were primarily created by John DeNero
 # (denero@cs.berkeley.edu) and Dan Klein (klein@cs.berkeley.edu).
@@ -43,6 +43,7 @@ class QLearningAgent(ReinforcementAgent):
         ReinforcementAgent.__init__(self, **args)
 
         "*** YOUR CODE HERE ***"
+        self.qvalues = util.Counter()
 
     def getQValue(self, state, action):
         """
@@ -51,8 +52,7 @@ class QLearningAgent(ReinforcementAgent):
           or the Q node value otherwise
         """
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
-
+        return self.qvalues[(state, action)]
 
     def computeValueFromQValues(self, state):
         """
@@ -62,7 +62,12 @@ class QLearningAgent(ReinforcementAgent):
           terminal state, you should return a value of 0.0.
         """
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        qvalues = []
+        for action in self.getLegalActions(state):
+            qvalues.append(self.getQValue(state, action))
+        if len(qvalues) != 0:
+            return max(qvalues)
+        return 0.0
 
     def computeActionFromQValues(self, state):
         """
@@ -71,7 +76,13 @@ class QLearningAgent(ReinforcementAgent):
           you should return None.
         """
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        qvalues = []
+        for action in self.getLegalActions(state):
+            qvalues.append((action, self.getQValue(state, action)))
+        if len(qvalues) != 0:
+            return max(qvalues, key = lambda item: item[1])[0]
+        else:
+            return None
 
     def getAction(self, state):
         """
@@ -88,9 +99,13 @@ class QLearningAgent(ReinforcementAgent):
         legalActions = self.getLegalActions(state)
         action = None
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
-
-        return action
+        if util.flipCoin(self.epsilon):
+            if len(legalActions) != 0:
+                return random.choice(legalActions)
+            else:
+                return None
+        else:
+            return self.computeActionFromQValues(state)
 
     def update(self, state, action, nextState, reward):
         """
@@ -102,7 +117,11 @@ class QLearningAgent(ReinforcementAgent):
           it will be called on your behalf
         """
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        value = self.computeValueFromQValues(nextState)
+        sample = reward + self.discount * value
+        qvalue = self.getQValue(state, action)
+        temp = (1 - self.alpha) * qvalue + self.alpha * sample
+        self.qvalues[(state, action)] = temp
 
     def getPolicy(self, state):
         return self.computeActionFromQValues(state)
@@ -165,14 +184,24 @@ class ApproximateQAgent(PacmanQAgent):
           where * is the dotProduct operator
         """
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        features = self.featExtractor.getFeatures(state, action)
+        weights = self.getWeights()
+        qvalue = 0
+        for f in features:
+            qvalue += weights[f] * features[f]
+        return qvalue
 
     def update(self, state, action, nextState, reward):
         """
            Should update your weights based on transition
         """
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        qvalue = self.getQValue(state, action)
+        value = self.computeValueFromQValues(nextState)
+        difference = reward + self.discount * value - qvalue
+        features = self.featExtractor.getFeatures(state, action)
+        for f in features:
+            self.weights[f] += self.alpha * difference * features[f]
 
     def final(self, state):
         "Called at the end of each game."

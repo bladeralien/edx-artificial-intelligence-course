@@ -4,7 +4,7 @@
 # educational purposes provided that (1) you do not distribute or publish
 # solutions, (2) you retain this notice, and (3) you provide clear
 # attribution to UC Berkeley, including a link to http://ai.berkeley.edu.
-# 
+#
 # Attribution Information: The Pacman AI projects were developed at UC Berkeley.
 # The core projects and autograders were primarily created by John DeNero
 # (denero@cs.berkeley.edu) and Dan Klein (klein@cs.berkeley.edu).
@@ -45,6 +45,18 @@ class ValueIterationAgent(ValueEstimationAgent):
 
         # Write value iteration code here
         "*** YOUR CODE HERE ***"
+        for i in range(iterations):
+            values = util.Counter()
+            for state in self.mdp.getStates():
+                qvalues = []
+                for action in self.mdp.getPossibleActions(state):
+                    qvalue = self.computeQValueFromValues(state, action)
+                    qvalues.append(qvalue)
+                if len(qvalues) != 0:
+                    values[state] = max(qvalues)
+                else:
+                    values[state] = 0
+            self.values = values
 
 
     def getValue(self, state):
@@ -60,7 +72,14 @@ class ValueIterationAgent(ValueEstimationAgent):
           value function stored in self.values.
         """
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        qvalue = 0
+        statesAndProbs = self.mdp.getTransitionStatesAndProbs(state, action)
+        for nextState, prob in statesAndProbs:
+            reward = self.mdp.getReward(state, action, nextState)
+            temp = reward + self.discount * self.getValue(nextState)
+            qvalue += prob * temp
+        return qvalue
+
 
     def computeActionFromValues(self, state):
         """
@@ -72,7 +91,15 @@ class ValueIterationAgent(ValueEstimationAgent):
           terminal state, you should return None.
         """
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        qvalues = []
+        for action in self.mdp.getPossibleActions(state):
+            qvalue = self.computeQValueFromValues(state, action)
+            qvalues.append((action, qvalue))
+        if len(qvalues) != 0:
+            return max(qvalues, key = lambda item: item[1])[0]
+        else:
+            return None
+
 
     def getPolicy(self, state):
         return self.computeActionFromValues(state)
